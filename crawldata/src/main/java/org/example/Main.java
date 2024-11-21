@@ -35,7 +35,7 @@ public class Main {
                 futaTables.addAll(getData(url, driver, formattedDate, date));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         } finally {
             // Close the browser
             driver.quit();
