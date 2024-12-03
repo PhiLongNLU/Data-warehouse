@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<db-config>
-    <port>3306</port>
-    <db-name>control_db</db-name>
-    <host-name>localhost</host-name>
-    <config-id>1</config-id>
-</db-config>
