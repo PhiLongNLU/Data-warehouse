@@ -35,7 +35,7 @@ public class DBLoader {
         String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
         System.out.println(url);
         String user = "root";
-        String password = "";
+        String password = "123456";
         return DriverManager.getConnection(url, user, password);
     }
 

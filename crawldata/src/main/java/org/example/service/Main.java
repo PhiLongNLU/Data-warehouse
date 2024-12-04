@@ -1,6 +1,8 @@
-package org.example;
+package org.example.service;
 
 import org.example.Connector.DBLoader;
+import org.example.service.CSVExporter;
+import org.example.service.FutaTable;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
