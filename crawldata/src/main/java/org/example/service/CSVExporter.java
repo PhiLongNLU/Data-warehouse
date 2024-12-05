@@ -17,7 +17,7 @@ public class CSVExporter {
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) {
-                    if (line.contains("12-31-+9999")) {
+                    if (line.contains("12-31-+999999999")) {
                         LocalDate currentDate = LocalDate.now();
                         String currentDateFormat = DateTimeFormatter.ofPattern("MM-dd-yyyy").format(currentDate);
                         line = line.replace("12-31-+999999999", currentDateFormat);

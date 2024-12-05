@@ -1,5 +1,6 @@
 package org.example.Connector;
 
+import org.example.assets.CrawlProcessStatus;
 import org.example.model.ALogs;
 import org.example.model.ConfigData;
 import org.example.model.CrawlLog;
@@ -38,7 +39,6 @@ public class DBLoader {
 
     private Connection getConnection() throws SQLException {
         String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
-        System.out.println(url);
         return DriverManager.getConnection(url, username, password);
     }
 
@@ -46,8 +46,9 @@ public class DBLoader {
         try{
             Connection connection = getConnection();
 
-            var ps = connection.prepareStatement("SELECT date_get_data FROM db_logs WHERE date_update = ?");
+            var ps = connection.prepareStatement("SELECT date_get_data, status FROM db_logs WHERE date_update = ? AND status = ?");
             ps.setDate(1, Date.valueOf(LocalDate.now()));
+            ps.setString(2, CrawlProcessStatus.FAILED);
 
             var resultSet = ps.executeQuery();
             if(resultSet.next()){
@@ -63,13 +64,14 @@ public class DBLoader {
     public void insertLog(ALogs log){
         try{
             var conn = getConnection();
-            var ps = conn.prepareStatement("INSERT INTO logs (configs_id, count, status, date_update, date_get_data, error_message) VALUES (?,?,?,?,?,?)");
+            var ps = conn.prepareStatement("INSERT INTO logs (configs_id, count, status, date_update, date_get_data, error_message, create_by) VALUES (?,?,?,?,?,?,?)");
             ps.setInt(1, Integer.parseInt(configID));
             ps.setInt(2, log.getCount());
             ps.setString(3, log.getStatus());
             ps.setDate(4, Date.valueOf(log.getDateUpdate()));
             ps.setDate(5, Date.valueOf(log.getDateGetData()));
             ps.setString(6, log.getErrorMessage());
+            ps.setString(7, log.getCreateBy());
             ps.executeUpdate();
         }
         catch (SQLException e) {
@@ -118,7 +120,6 @@ public class DBLoader {
     }
 
     public static void main(String[] args) throws SQLException {
-        var connection = DBLoader.getInstance().getConnection();
-        System.out.println(DBLoader.getInstance().getFilePath());
+        DBLoader.getInstance().insertLog(new CrawlLog(10, CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), LocalDate.now()));
     }
 }
