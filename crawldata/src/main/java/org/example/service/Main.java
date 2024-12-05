@@ -50,7 +50,7 @@ public class Main {
                 }
             }
         } catch (InterruptedException e) {
-            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), LocalDate.now(), errorCrawlDate));
+            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), CrawlProcessStatus.AUTHOR ,LocalDate.now(), errorCrawlDate));
         } finally {
             driver.quit();
         }
@@ -58,10 +58,10 @@ public class Main {
         try{
             CSVExporter.exportToCSV(futaTables, DBLoader.getInstance().getFilePath());
         } catch (IOException e) {
-            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), LocalDate.now(), errorCrawlDate));
+            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), CrawlProcessStatus.AUTHOR , LocalDate.now(), errorCrawlDate));
         }
 
-        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, LocalDate.now(), errorCrawlDate));
+        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), errorCrawlDate));
     }
 
     public static List<FutaTable> getData(String url, WebDriver driver, String formattedDate, LocalDate date) throws InterruptedException {

@@ -60,7 +60,7 @@ public class DBLoader {
         return null;
     }
 
-    public boolean insertLog(ALogs log){
+    public void insertLog(ALogs log){
         try{
             var conn = getConnection();
             var ps = conn.prepareStatement("INSERT INTO logs (configs_id, count, status, date_update, date_get_data, error_message) VALUES (?,?,?,?,?,?)");
@@ -70,13 +70,11 @@ public class DBLoader {
             ps.setDate(4, Date.valueOf(log.getDateUpdate()));
             ps.setDate(5, Date.valueOf(log.getDateGetData()));
             ps.setString(6, log.getErrorMessage());
-            return ps.executeUpdate() > 0;
+            ps.executeUpdate();
         }
         catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-
-        return false;
     }
 
     public List<ConfigData> getConfigData() {
@@ -119,8 +117,8 @@ public class DBLoader {
         return "";
     }
 
-//    public static void main(String[] args) throws SQLException {
-////        var connection = DBLoader.getInstance().getConnection();
-//        System.out.println(DBLoader.getInstance().getFilePath());
-//    }
+    public static void main(String[] args) throws SQLException {
+        var connection = DBLoader.getInstance().getConnection();
+        System.out.println(DBLoader.getInstance().getFilePath());
+    }
 }

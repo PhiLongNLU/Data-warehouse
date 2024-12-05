@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 public class CrawlLog extends ALogs{
 
-    public CrawlLog(int count, String status, String errorMessage, LocalDate dateUpdate, LocalDate dateGetData) {
-        super(count, status, errorMessage, dateUpdate, dateGetData);
+    public CrawlLog(int count, String status, String errorMessage, String createBy, LocalDate dateUpdate, LocalDate dateGetData) {
+        super(count, status, errorMessage, createBy, dateUpdate, dateGetData);
     }
 }
