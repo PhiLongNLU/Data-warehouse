@@ -59,20 +59,8 @@ public class FutaTable {
         return arrivalDate;
     }
 
-    public void setArrivalDate(LocalDateTime departureDate) {
-        try{
-            int hour = Integer.parseInt(transitTime.split(" ")[0]);
-            departureDate.plusHours(hour);
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-            this.arrivalDate = formatter.format(departureDate);
-        }
-        catch(NumberFormatException e) {
-
-        }
-        catch (Exception e){
-
-        }
+    public void setArrivalDate(String arrivalDate) {
+        this.arrivalDate = arrivalDate;
     }
 
     public String getTransitTime() {

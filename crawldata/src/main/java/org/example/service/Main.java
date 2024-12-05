@@ -1,15 +1,17 @@
 package org.example.service;
 
 import org.example.Connector.DBLoader;
-import org.example.service.CSVExporter;
-import org.example.service.FutaTable;
+import org.example.assets.CrawlProcessStatus;
+import org.example.assets.LinkConstant;
+import org.example.model.CrawlLog;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
-import java.time.LocalDateTime;
+import java.io.IOException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,36 +19,52 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         List<FutaTable> futaTables = new ArrayList<>();
-        LocalDateTime date = LocalDateTime.now().plusDays(1);
         DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-        String formattedDate = date.format(myFormatObj);
 
-        // Set the path to your ChromeDriver
         System.setProperty("webdriver.gecko.driver", "geckodriver-v0.35.0-win32/geckodriver.exe");
-        // Launch Chrome browser in non-headless mode
         FirefoxOptions options = new FirefoxOptions();
-        options.setBinary("C:\\Program Files\\Mozilla Firefox\\firefox.exe");
+        options.setBinary(LinkConstant.LELONG_FIRE_FOX);
         WebDriver driver = new FirefoxDriver(options);
 
+        var errorCrawlDate = DBLoader.getInstance().getDateFailedCrawl();
         try {
-            var configDatas = DBLoader.getInstance().getConfigData();
+            if (errorCrawlDate != null) {
+                String formattedDate = errorCrawlDate.format(myFormatObj);
+                var configDatas = DBLoader.getInstance().getConfigData();
 
-            for (var configData : configDatas) {
-                String url = configData.url().replace("DATEFROM", formattedDate);
-                var dataTable = getData(url, driver, formattedDate, date);
-                futaTables.addAll(dataTable);
+                for (var configData : configDatas) {
+                    String url = configData.url().replace("DATEFROM", formattedDate);
+                    var dataTable = getData(url, driver, formattedDate, errorCrawlDate);
+                    futaTables.addAll(dataTable);
+                }
+
+            } else {
+                LocalDate date = LocalDate.now().plusDays(1);
+                String formattedDate = date.format(myFormatObj);
+                var configDatas = DBLoader.getInstance().getConfigData();
+
+                for (var configData : configDatas) {
+                    String url = configData.url().replace("DATEFROM", formattedDate);
+                    var dataTable = getData(url, driver, formattedDate, date);
+                    futaTables.addAll(dataTable);
+                }
             }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+        } catch (InterruptedException e) {
+            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), LocalDate.now(), errorCrawlDate));
         } finally {
-            // Close the browser
             driver.quit();
         }
 
-        CSVExporter.exportToCSV(futaTables, DBLoader.getInstance().getFilePath());
+        try{
+            CSVExporter.exportToCSV(futaTables, DBLoader.getInstance().getFilePath());
+        } catch (IOException e) {
+            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), LocalDate.now(), errorCrawlDate));
+        }
+
+        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, LocalDate.now(), errorCrawlDate));
     }
 
-    public static List<FutaTable> getData(String url, WebDriver driver, String formattedDate, LocalDateTime date) throws InterruptedException {
+    public static List<FutaTable> getData(String url, WebDriver driver, String formattedDate, LocalDate date) throws InterruptedException {
         List<FutaTable> futaTables = new ArrayList<>();
         driver.get(url);
 
@@ -58,7 +76,7 @@ public class Main {
         String startCity = input.get(0).getText();
         String endCity = input.get(1).getText();
 
-        int i  = 0;
+        int i = 0;
         for (WebElement bus : busElements) {
             FutaTable futaTable = new FutaTable();
 
@@ -71,7 +89,7 @@ public class Main {
             futaTable.setDepartureDate(formattedDate);
             futaTable.setTransitTime(firstDatas[1]);
             futaTable.setArrivalTime(firstDatas[3]);
-            futaTable.setArrivalDate(date);
+            futaTable.setArrivalDate(formattedDate);
             futaTable.setStartPoint(firstDatas[4]);
             futaTable.setEndPoint(firstDatas[5]);
 
@@ -82,7 +100,7 @@ public class Main {
 
             futaTables.add(futaTable);
             i++;
-            if(i == 10) break;
+            if (i == 10) break;
         }
 
         return futaTables;

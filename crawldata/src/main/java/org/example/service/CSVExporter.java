@@ -7,8 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class CSVExporter {
-    public static void exportToCSV(List<FutaTable> buses, String filePath) {
-        try {
+    public static void exportToCSV(List<FutaTable> buses, String filePath) throws IOException {
             File file = new File(filePath);
             boolean fileExists = file.exists();
 
@@ -51,9 +50,5 @@ public class CSVExporter {
             catch (Exception e){
                 System.out.println(e.getMessage());
             }
-
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
     }
 }
