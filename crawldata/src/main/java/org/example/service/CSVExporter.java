@@ -7,8 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class CSVExporter {
-    public static void exportToCSV(List<FutaTable> buses, String filePath) {
-        try {
+    public static void exportToCSV(List<FutaTable> buses, String filePath) throws IOException {
             File file = new File(filePath);
             boolean fileExists = file.exists();
 
@@ -18,7 +17,7 @@ public class CSVExporter {
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) {
-                    if (line.contains("12-31-+9999")) {
+                    if (line.contains("12-31-+999999999")) {
                         LocalDate currentDate = LocalDate.now();
                         String currentDateFormat = DateTimeFormatter.ofPattern("MM-dd-yyyy").format(currentDate);
                         line = line.replace("12-31-+999999999", currentDateFormat);
@@ -51,9 +50,5 @@ public class CSVExporter {
             catch (Exception e){
                 System.out.println(e.getMessage());
             }
-
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
     }
 }

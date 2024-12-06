@@ -1,16 +1,20 @@
 package org.example.Connector;
 
+import org.example.assets.CrawlProcessStatus;
+import org.example.model.ALogs;
 import org.example.model.ConfigData;
+import org.example.model.CrawlLog;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 public class DBLoader {
-    protected String port, database, host, configID;
+    protected String port, database, host, username,password;
+    public String configID;
 
     public static final DBLoader instance = new DBLoader();
 
@@ -22,6 +26,8 @@ public class DBLoader {
             database = properties.getProperty("db_name");
             host = properties.getProperty("host_name");
             configID = properties.getProperty("config_id");
+            username = properties.getProperty("username");
+            password = properties.getProperty("password");
         } catch (Exception e) {
             System.out.println("Exception at line 26 in DBLoader : " + e.getMessage());
         }
@@ -33,10 +39,44 @@ public class DBLoader {
 
     private Connection getConnection() throws SQLException {
         String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
-        System.out.println(url);
-        String user = "root";
-        String password = "123456";
-        return DriverManager.getConnection(url, user, password);
+        return DriverManager.getConnection(url, username, password);
+    }
+
+    public LocalDate getDateFailedCrawl(){
+        try{
+            Connection connection = getConnection();
+
+            var ps = connection.prepareStatement("SELECT date_get_data, status FROM db_logs WHERE date_update = ? AND status = ?");
+            ps.setDate(1, Date.valueOf(LocalDate.now()));
+            ps.setString(2, CrawlProcessStatus.FAILED);
+
+            var resultSet = ps.executeQuery();
+            if(resultSet.next()){
+                return resultSet.getDate("date_get_data").toLocalDate();
+            }
+        } catch (SQLException e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    public void insertLog(ALogs log){
+        try{
+            var conn = getConnection();
+            var ps = conn.prepareStatement("INSERT INTO logs (configs_id, count, status, date_update, date_get_data, error_message, create_by) VALUES (?,?,?,?,?,?,?)");
+            ps.setInt(1, Integer.parseInt(configID));
+            ps.setInt(2, log.getCount());
+            ps.setString(3, log.getStatus());
+            ps.setDate(4, Date.valueOf(log.getDateUpdate()));
+            ps.setDate(5, Date.valueOf(log.getDateGetData()));
+            ps.setString(6, log.getErrorMessage());
+            ps.setString(7, log.getCreateBy());
+            ps.executeUpdate();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     public List<ConfigData> getConfigData() {
@@ -79,8 +119,7 @@ public class DBLoader {
         return "";
     }
 
-//    public static void main(String[] args) throws SQLException {
-////        var connection = DBLoader.getInstance().getConnection();
-//        System.out.println(DBLoader.getInstance().getFilePath());
-//    }
+    public static void main(String[] args) throws SQLException {
+        DBLoader.getInstance().insertLog(new CrawlLog(10, CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), LocalDate.now()));
+    }
 }
