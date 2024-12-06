@@ -7,7 +7,6 @@ import org.example.model.CrawlLog;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -48,7 +47,7 @@ public class DBLoader {
 
             var ps = connection.prepareStatement("SELECT date_get_data, status FROM db_logs WHERE date_update = ? AND status = ?");
             ps.setDate(1, Date.valueOf(LocalDate.now()));
-            ps.setString(2, CrawlProcessStatus.FAILED);
+            ps.setString(2, CrawlProcessStatus.CRAWL_FAILED);
 
             var resultSet = ps.executeQuery();
             if(resultSet.next()){
@@ -120,6 +119,6 @@ public class DBLoader {
     }
 
     public static void main(String[] args) throws SQLException {
-        DBLoader.getInstance().insertLog(new CrawlLog(10, CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), LocalDate.now()));
+        DBLoader.getInstance().insertLog(new CrawlLog(10, CrawlProcessStatus.CRAWL_SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.GENERATE_AUTHOR, LocalDate.now(), LocalDate.now()));
     }
 }

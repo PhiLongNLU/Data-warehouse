@@ -9,10 +9,21 @@ public abstract class ALogs {
     protected int count;
     protected LocalDate dateUpdate, dateGetData;
     protected String status, errorMessage, createBy;
+    protected static final int DEFAULT_COUNT = 0;
 
     public ALogs(int count,String status, String errorMessage, String createBy, LocalDate dateUpdate, LocalDate dateGetData){
         this.configId = Integer.parseInt(DBLoader.instance.configID);
         this.count = count;
+        this.status = status;
+        this.errorMessage = errorMessage;
+        this.dateUpdate = dateUpdate;
+        this.dateGetData = dateGetData;
+        this.createBy = createBy;
+    }
+
+    public ALogs(String status, String errorMessage, String createBy, LocalDate dateUpdate, LocalDate dateGetData){
+        this.configId = Integer.parseInt(DBLoader.instance.configID);
+        this.count = DEFAULT_COUNT;
         this.status = status;
         this.errorMessage = errorMessage;
         this.dateUpdate = dateUpdate;

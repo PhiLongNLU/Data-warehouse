@@ -50,18 +50,18 @@ public class Main {
                 }
             }
         } catch (InterruptedException e) {
-            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), CrawlProcessStatus.AUTHOR ,LocalDate.now(), dateCrawlData));
+            DBLoader.getInstance().insertLog(new CrawlLog(CrawlProcessStatus.CRAWL_FAILED, e.getMessage(), CrawlProcessStatus.GENERATE_AUTHOR,LocalDate.now(), dateCrawlData));
         } finally {
             driver.quit();
         }
 
         try{
-            CSVExporter.exportToCSV(futaTables, DBLoader.getInstance().getFilePath());
+            CSVExporter.exportToCSV2(futaTables, DBLoader.getInstance().getFilePath());
         } catch (IOException e) {
-            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), CrawlProcessStatus.AUTHOR , LocalDate.now(), dateCrawlData));
+            DBLoader.getInstance().insertLog(new CrawlLog(CrawlProcessStatus.CRAWL_FAILED, e.getMessage(), CrawlProcessStatus.GENERATE_AUTHOR, LocalDate.now(), dateCrawlData));
         }
 
-        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), dateCrawlData));
+        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.CRAWL_SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.GENERATE_AUTHOR, LocalDate.now(), dateCrawlData));
     }
 
     public static List<FutaTable> getData(String url, WebDriver driver, String formattedDate, LocalDate date) throws InterruptedException {
