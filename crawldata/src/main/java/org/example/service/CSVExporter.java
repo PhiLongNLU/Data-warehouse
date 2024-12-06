@@ -45,11 +45,14 @@ public class CSVExporter {
     }
 
     private static BufferedWriter writeDataToFileCSV(List<FutaTable> buses, File file) throws IOException {
+        DateTimeFormatter formatterDate = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+        DateTimeFormatter formatterTime = DateTimeFormatter.ofPattern("hh:mm");
+
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8));
         for (var bus : buses) {
             String dataLine = bus.transitTime + "," + bus.startCity + "," + bus.endCity + "," + bus.startPoint + "," + bus.endPoint + ","
                     + bus.departureDate + "," + bus.departureTime + "," + bus.arrivalTime + "," + bus.arrivalDate + "," + bus.ticketPrice + ","
-                    + bus.busType + "," + bus.totalAvailableSeat + "," + bus.dateGetData + "," + LocalTime.now() + "," + CrawlProcessStatus.LOCATION_GET_DATA + "\n";
+                    + bus.busType + "," + bus.totalAvailableSeat + "," + bus.dateGetData + "," + LocalTime.now().format(formatterTime) + "," + CrawlProcessStatus.LOCATION_GET_DATA + "\n";
             bw.write(dataLine);
         }
         return bw;
