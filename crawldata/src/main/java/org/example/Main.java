@@ -1,9 +1,11 @@
-package org.example.service;
+package org.example;
 
 import org.example.Connector.DBLoader;
 import org.example.assets.CrawlProcessStatus;
 import org.example.assets.LinkConstant;
 import org.example.model.CrawlLog;
+import org.example.service.CSVExporter;
+import org.example.service.FutaTable;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -26,9 +28,14 @@ public class Main {
         options.setBinary(LinkConstant.LELONG_FIRE_FOX);
         WebDriver driver = new FirefoxDriver(options);
 
-        var dateCrawlData = DBLoader.getInstance().getDateFailedCrawl();
+        var crawlData = DBLoader.getInstance().getDateCrawlData();
+        var dateCrawlData = crawlData.dateGetData();
         try {
-            if (dateCrawlData != null) {
+            if(crawlData.status().equals(CrawlProcessStatus.CRAWL_SUCCESS)) {
+                System.out.println("data has been crawled success before!");
+                return;
+            }
+            else if (crawlData.status().equals(CrawlProcessStatus.CRAWL_FAILED)) {
                 String formattedDate = dateCrawlData.format(myFormatObj);
                 var configDatas = DBLoader.getInstance().getConfigData();
 
@@ -37,7 +44,6 @@ public class Main {
                     var dataTable = getData(url, driver, formattedDate, dateCrawlData);
                     futaTables.addAll(dataTable);
                 }
-
             } else {
                 dateCrawlData = LocalDate.now().plusDays(1);
                 String formattedDate = dateCrawlData.format(myFormatObj);
