@@ -3,11 +3,10 @@ package org.example.Connector;
 import org.example.assets.CrawlProcessStatus;
 import org.example.model.ALogs;
 import org.example.model.ConfigData;
-import org.example.model.CrawlLog;
+import org.example.model.CrawlData;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -42,17 +41,16 @@ public class DBLoader {
         return DriverManager.getConnection(url, username, password);
     }
 
-    public LocalDate getDateFailedCrawl(){
+    public CrawlData getDateCrawlData(){
         try{
             Connection connection = getConnection();
 
-            var ps = connection.prepareStatement("SELECT date_get_data, status FROM db_logs WHERE date_update = ? AND status = ?");
+            var ps = connection.prepareStatement("SELECT date_get_data, status FROM logs WHERE date_update = ?");
             ps.setDate(1, Date.valueOf(LocalDate.now()));
-            ps.setString(2, CrawlProcessStatus.FAILED);
 
             var resultSet = ps.executeQuery();
             if(resultSet.next()){
-                return resultSet.getDate("date_get_data").toLocalDate();
+                 return new CrawlData(resultSet.getDate("date_get_data").toLocalDate(), resultSet.getString("status"));
             }
         } catch (SQLException e) {
             return null;
@@ -119,7 +117,7 @@ public class DBLoader {
         return "";
     }
 
-    public static void main(String[] args) throws SQLException {
-        DBLoader.getInstance().insertLog(new CrawlLog(10, CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), LocalDate.now()));
-    }
+//    public static void main(String[] args) throws SQLException {
+//        System.out.println(DBLoader.getInstance().getDateCrawlData());
+//    }
 }

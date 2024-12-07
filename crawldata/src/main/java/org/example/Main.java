@@ -1,9 +1,11 @@
-package org.example.service;
+package org.example;
 
 import org.example.Connector.DBLoader;
 import org.example.assets.CrawlProcessStatus;
 import org.example.assets.LinkConstant;
 import org.example.model.CrawlLog;
+import org.example.service.CSVExporter;
+import org.example.service.FutaTable;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -26,9 +28,14 @@ public class Main {
         options.setBinary(LinkConstant.LELONG_FIRE_FOX);
         WebDriver driver = new FirefoxDriver(options);
 
-        var dateCrawlData = DBLoader.getInstance().getDateFailedCrawl();
+        var crawlData = DBLoader.getInstance().getDateCrawlData();
+        var dateCrawlData = crawlData.dateGetData();
         try {
-            if (dateCrawlData != null) {
+            if(crawlData.status().equals(CrawlProcessStatus.CRAWL_SUCCESS)) {
+                System.out.println("data has been crawled success before!");
+                return;
+            }
+            else if (crawlData.status().equals(CrawlProcessStatus.CRAWL_FAILED)) {
                 String formattedDate = dateCrawlData.format(myFormatObj);
                 var configDatas = DBLoader.getInstance().getConfigData();
 
@@ -37,7 +44,6 @@ public class Main {
                     var dataTable = getData(url, driver, formattedDate, dateCrawlData);
                     futaTables.addAll(dataTable);
                 }
-
             } else {
                 dateCrawlData = LocalDate.now().plusDays(1);
                 String formattedDate = dateCrawlData.format(myFormatObj);
@@ -50,18 +56,18 @@ public class Main {
                 }
             }
         } catch (InterruptedException e) {
-            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), CrawlProcessStatus.AUTHOR ,LocalDate.now(), dateCrawlData));
+            DBLoader.getInstance().insertLog(new CrawlLog(CrawlProcessStatus.CRAWL_FAILED, e.getMessage(), CrawlProcessStatus.GENERATE_AUTHOR,LocalDate.now(), dateCrawlData));
         } finally {
             driver.quit();
         }
 
         try{
-            CSVExporter.exportToCSV(futaTables, DBLoader.getInstance().getFilePath());
+            CSVExporter.exportToCSV2(futaTables, DBLoader.getInstance().getFilePath());
         } catch (IOException e) {
-            DBLoader.getInstance().insertLog(new CrawlLog(0, CrawlProcessStatus.FAILED, e.getMessage(), CrawlProcessStatus.AUTHOR , LocalDate.now(), dateCrawlData));
+            DBLoader.getInstance().insertLog(new CrawlLog(CrawlProcessStatus.CRAWL_FAILED, e.getMessage(), CrawlProcessStatus.GENERATE_AUTHOR, LocalDate.now(), dateCrawlData));
         }
 
-        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.AUTHOR , LocalDate.now(), dateCrawlData));
+        DBLoader.getInstance().insertLog(new CrawlLog(futaTables.size(), CrawlProcessStatus.CRAWL_SUCCESS, CrawlProcessStatus.SUCCESS_MESSAGE, CrawlProcessStatus.GENERATE_AUTHOR, LocalDate.now(), dateCrawlData));
     }
 
     public static List<FutaTable> getData(String url, WebDriver driver, String formattedDate, LocalDate date) throws InterruptedException {
