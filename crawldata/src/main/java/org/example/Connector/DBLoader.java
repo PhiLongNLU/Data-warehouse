@@ -117,7 +117,7 @@ public class DBLoader {
         return "";
     }
 
-    public static void main(String[] args) throws SQLException {
-        System.out.println(DBLoader.getInstance().getDateCrawlData());
-    }
+//    public static void main(String[] args) throws SQLException {
+//        System.out.println(DBLoader.getInstance().getDateCrawlData());
+//    }
 }
