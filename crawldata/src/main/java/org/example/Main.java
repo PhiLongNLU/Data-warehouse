@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Main {
     public static void main(String[] args) {
@@ -29,14 +30,19 @@ public class Main {
         WebDriver driver = new FirefoxDriver(options);
 
         var crawlData = DBLoader.getInstance().getDateCrawlData();
-        var dateCrawlData = crawlData.dateGetData();
+        LocalDate dateCrawlData;
+
+        if(Objects.isNull(crawlData)) {
+            dateCrawlData = LocalDate.now().plusDays(1);
+        }
+        else{
+            dateCrawlData = crawlData.dateGetData();
+        }
+
         try {
-            if(crawlData.status().equals(CrawlProcessStatus.CRAWL_SUCCESS)) {
-                System.out.println("data has been crawled success before!");
-                return;
-            }
-            else if (crawlData.status().equals(CrawlProcessStatus.CRAWL_FAILED)) {
-                String formattedDate = dateCrawlData.format(myFormatObj);
+            String formattedDate = dateCrawlData.format(myFormatObj);
+
+            if(Objects.isNull(crawlData)){
                 var configDatas = DBLoader.getInstance().getConfigData();
 
                 for (var configData : configDatas) {
@@ -44,9 +50,12 @@ public class Main {
                     var dataTable = getData(url, driver, formattedDate, dateCrawlData);
                     futaTables.addAll(dataTable);
                 }
-            } else {
-                dateCrawlData = LocalDate.now().plusDays(1);
-                String formattedDate = dateCrawlData.format(myFormatObj);
+            }
+            else if(crawlData.status().equals(CrawlProcessStatus.CRAWL_SUCCESS)) {
+                System.out.println("data has been crawled success before!");
+                return;
+            }
+            else if (crawlData.status().equals(CrawlProcessStatus.CRAWL_FAILED)) {
                 var configDatas = DBLoader.getInstance().getConfigData();
 
                 for (var configData : configDatas) {
