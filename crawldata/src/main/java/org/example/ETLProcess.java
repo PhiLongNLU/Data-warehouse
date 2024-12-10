@@ -1,4 +1,4 @@
-package org.example.service;
+package org.example;
 
 import org.example.Connector.JDBIConnector;
 import org.jdbi.v3.core.Handle;
