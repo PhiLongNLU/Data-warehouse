@@ -46,7 +46,7 @@ public class DBLoader {
             Connection connection = getConnection();
 
             var ps = connection.prepareStatement("SELECT date_get_data, status FROM logs WHERE date_update = ?");
-            ps.setDate(1, Date.valueOf(LocalDate.now().plusDays(1)));
+            ps.setDate(1, Date.valueOf(LocalDate.now()));
 
             var resultSet = ps.executeQuery();
             if(resultSet.next()){
