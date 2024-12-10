@@ -6,11 +6,13 @@ import java.util.Properties;
 public class DBProperties {
     private static Properties propStaging = new Properties();
     private static Properties propControl = new Properties();
+    private static Properties propDataWarehouse = new Properties();
 
     static {
         try {
             propStaging.load(DBProperties.class.getClassLoader().getResourceAsStream("staging.properties"));
             propControl.load(DBProperties.class.getClassLoader().getResourceAsStream("config.properties"));
+            propDataWarehouse.load(DBProperties.class.getClassLoader().getResourceAsStream("data_warehouse.properties"));
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException();
@@ -31,4 +33,10 @@ public class DBProperties {
     public static String passControl = propControl.getProperty("db.password");
     public static String dbnameControl = propControl.getProperty("db.name");
 
+    // Sử dụng propStaging cho DataWarehouse environment
+    public static String hostData = propDataWarehouse.getProperty("db.host");
+    public static String portData = propDataWarehouse.getProperty("db.port");
+    public static String usernameData = propDataWarehouse.getProperty("db.username");
+    public static String passData = propDataWarehouse.getProperty("db.password");
+    public static String dbnameData = propDataWarehouse.getProperty("db.name");
 }
