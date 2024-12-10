@@ -33,7 +33,7 @@ public class Main {
         LocalDate dateCrawlData;
 
         if(Objects.isNull(crawlData)) {
-            dateCrawlData = LocalDate.now();
+            dateCrawlData = LocalDate.now().plusDays(1);
         }
         else{
             dateCrawlData = crawlData.dateGetData();
@@ -43,7 +43,6 @@ public class Main {
             String formattedDate = dateCrawlData.format(myFormatObj);
 
             if(Objects.isNull(crawlData)){
-                dateCrawlData = LocalDate.now().plusDays(1);
                 var configDatas = DBLoader.getInstance().getConfigData();
 
                 for (var configData : configDatas) {
