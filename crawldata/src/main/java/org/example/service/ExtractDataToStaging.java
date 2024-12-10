@@ -2,14 +2,20 @@ package org.example.service;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import org.example.Connector.DBLoader;
 import org.example.Connector.JDBIConnector;
+import org.example.assets.CrawlProcessStatus;
+import org.example.assets.LoadToStagingConstants;
+import org.example.model.CrawlLog;
 import org.jdbi.v3.core.Handle;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 public class ExtractDataToStaging {
-    private static void saveToStaging(String path) {
+    private static void saveToStaging(String path) throws Exception {
         String csvFilePath = path;
         File file = new File(csvFilePath);
 
@@ -74,17 +80,34 @@ public class ExtractDataToStaging {
             }
 
             System.out.println("Dữ liệu đã được lưu thành công vào bảng staging.");
-        } catch (FileNotFoundException e) {
-            System.err.println("Không tìm thấy file: " + e.getMessage());
-        } catch (IOException | CsvException e) {
-            System.err.println("Lỗi khi đọc file: " + e.getMessage());
+
         } catch (Exception e) {
-            System.err.println("Lỗi không xác định: " + e.getMessage());
+            throw new Exception(e.getMessage());
         }
     }
 
-        public static void main(String[] args) {
-        String path = "D:\\N4\\HK1\\DataWareHouse\\futabus_path\\futabus.csv";
-        saveToStaging(path);
+    public static void main(String[] args) {
+        try {
+            String path = DBLoader.getInstance().getFilePath();
+            var extractData = DBLoader.getInstance().getLogToDay(LoadToStagingConstants.EXTRACT_SUCCESS);
+            if (!Objects.isNull(extractData)) return;
+            else {
+                var crawlData = DBLoader.getInstance().getLogToDay(CrawlProcessStatus.CRAWL_SUCCESS);
+                if (Objects.isNull(crawlData)) {
+                    return;
+                }
+                extractData = DBLoader.getInstance().getLogToDay(LoadToStagingConstants.EXTRACT_FAILED);
+                if (!Objects.isNull(extractData)) {
+                    saveToStaging(path);
+                    extractData.setStatus(LoadToStagingConstants.EXTRACT_SUCCESS);
+                    DBLoader.getInstance().updateLogStatus(extractData);
+                } else {
+                    saveToStaging(path);
+                    DBLoader.getInstance().insertLog(new CrawlLog(crawlData.getCount(), LoadToStagingConstants.EXTRACT_SUCCESS, LoadToStagingConstants.SUCCESS_MESSAGE, LoadToStagingConstants.GENERATE_AUTHOR, LocalDate.now(), crawlData.getDateGetData()));
+                }
+            }
+        } catch (Exception e) {
+            DBLoader.getInstance().insertLog(new CrawlLog(LoadToStagingConstants.EXTRACT_FAILED, e.getMessage(), LoadToStagingConstants.GENERATE_AUTHOR, LocalDate.now(), null));
+        }
     }
 }

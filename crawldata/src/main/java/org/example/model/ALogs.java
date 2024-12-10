@@ -58,4 +58,32 @@ public abstract class ALogs {
     public String getCreateBy() {
         return createBy;
     }
+
+    public void setConfigId(int configId) {
+        this.configId = configId;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public void setDateUpdate(LocalDate dateUpdate) {
+        this.dateUpdate = dateUpdate;
+    }
+
+    public void setDateGetData(LocalDate dateGetData) {
+        this.dateGetData = dateGetData;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public void setCreateBy(String createBy) {
+        this.createBy = createBy;
+    }
 }

@@ -1,9 +1,9 @@
 package org.example.Connector;
 
-import org.example.assets.CrawlProcessStatus;
 import org.example.model.ALogs;
 import org.example.model.ConfigData;
 import org.example.model.CrawlData;
+import org.example.model.CrawlLog;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -39,6 +39,27 @@ public class DBLoader {
     private Connection getConnection() throws SQLException {
         String url = "jdbc:mysql://" + host + ":" + port + "/" + database;
         return DriverManager.getConnection(url, username, password);
+    }
+
+    public ALogs getLogToDay(String status) throws SQLException {
+        var conn = getConnection();
+        var ps = conn.prepareStatement("SELECT * FROM logs WHERE date_update = ? AND status = ?");
+        ps.setDate(1, Date.valueOf(LocalDate.now()));
+        ps.setString(2, status);
+        ResultSet rs = ps.executeQuery();
+        if(rs.next()){
+            return new CrawlLog(rs.getInt("count"), rs.getString("status"), rs.getString("error_message"), rs.getString("create_by"), rs.getDate("date_update").toLocalDate(), rs.getDate("date_get_data").toLocalDate());
+        }
+
+        return null;
+    }
+
+    public boolean updateLogStatus(ALogs logs) throws SQLException {
+        var conn = getConnection();
+        var ps = conn.prepareStatement("UPDATE logs SET status = ? WHERE date_update = ?");
+        ps.setString(1, logs.getStatus());
+        ps.setDate(2, Date.valueOf(LocalDate.now()));
+        return ps.executeUpdate() > 0;
     }
 
     public CrawlData getDateCrawlData(){
