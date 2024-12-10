@@ -37,8 +37,8 @@ public class ExtractDataToStaging {
             String truncateSql = "TRUNCATE TABLE staging";  // Sử dụng TRUNCATE để xóa toàn bộ dữ liệu
             String insertSql = "INSERT INTO staging (transit_time, start_city, end_city, start_point, end_point, " +
                                "departure_date, departure_time, arrival_time, arrival_date, ticket_price, bus_type, " +
-                               "total_available_seat, date_get_data, date_expired_data) " +
-                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                               "total_available_seat, date_get_data, time_get_data, location_get_data) " +
+                               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (Handle handle = JDBIConnector.getStagingJdbi().open()) {
                 handle.useTransaction(h -> {
@@ -48,7 +48,7 @@ public class ExtractDataToStaging {
 
                     // Thực hiện batch insert dữ liệu mới từ CSV
                     for (String[] line : allLines) {
-                        if (line.length != 14) {
+                        if (line.length != 15) {
                             System.err.println("Dòng không hợp lệ: " + String.join(",", line));
                             continue;
                         }
@@ -67,6 +67,7 @@ public class ExtractDataToStaging {
                          .bind(11, line[11])
                          .bind(12, line[12])
                          .bind(13, line[13])
+                         .bind(14, line[14])
                          .execute();
                     }
                 });
@@ -82,7 +83,7 @@ public class ExtractDataToStaging {
         }
     }
 
-    public static void main(String[] args) {
+        public static void main(String[] args) {
         String path = "D:\\N4\\HK1\\DataWareHouse\\futabus_path\\futabus.csv";
         saveToStaging(path);
     }
