@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 public class JDBIConnector {
     private static Jdbi jdbiStaging;
+    private static Jdbi jdbiControl;
     private static Jdbi jdbiDataWarehouse;
 
     private static void connectStaging() {
@@ -37,7 +38,6 @@ public class JDBIConnector {
         jdbiDataWarehouse = Jdbi.create(dataSource);
     }
 
-
     public static Jdbi getStagingJdbi() {
         if (jdbiStaging == null) {
             connectStaging();
@@ -56,5 +56,6 @@ public class JDBIConnector {
        connectStaging();
        connectDataWarehouse();
     }
+
 }
 
