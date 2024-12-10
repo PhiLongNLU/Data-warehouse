@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class Main {
+public class CrawlData {
     public static void main(String[] args) {
         List<FutaTable> futaTables = new ArrayList<>();
         DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MM-dd-yyyy");
