@@ -77,6 +77,7 @@ public class DBLoader {
         }
     }
 
+    //get config data
     public List<ConfigData> getConfigData() {
         List<ConfigData> configDatas = new ArrayList<>();
         try {
