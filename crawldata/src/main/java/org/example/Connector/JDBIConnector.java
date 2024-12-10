@@ -7,8 +7,8 @@ import java.sql.SQLException;
 
 public class JDBIConnector {
     private static Jdbi jdbiStaging;
-    private static Jdbi jdbiControl;
     private static Jdbi jdbiDataWarehouse;
+    private static Jdbi jdbiControl;
 
     private static void connectStaging() {
         MysqlDataSource dataSource = new MysqlDataSource();
@@ -38,6 +38,21 @@ public class JDBIConnector {
         jdbiDataWarehouse = Jdbi.create(dataSource);
     }
 
+    private static void connectControl() {
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setURL("jdbc:mysql://" + DBProperties.hostControl + ":" + DBProperties.portControl + "/" + DBProperties.dbnameControl);
+        dataSource.setUser(DBProperties.usernameControl);
+        dataSource.setPassword(DBProperties.passControl);
+        try {
+            dataSource.setAutoReconnect(true);
+            dataSource.setUseCompression(true);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        jdbiControl = Jdbi.create(dataSource);
+    }
+
+
     public static Jdbi getStagingJdbi() {
         if (jdbiStaging == null) {
             connectStaging();
@@ -52,10 +67,17 @@ public class JDBIConnector {
         return jdbiDataWarehouse;
     }
 
+    public static Jdbi getControlJdbi() {
+        if (jdbiControl == null) {
+            connectControl();
+        }
+        return jdbiControl;
+    }
+
     public static void main(String[] args) {
        connectStaging();
        connectDataWarehouse();
+       connectControl();
     }
-
 }
 
