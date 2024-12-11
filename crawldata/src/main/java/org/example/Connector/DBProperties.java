@@ -26,7 +26,7 @@ public class DBProperties {
     public static String passStaging = propStaging.getProperty("db.password");
     public static String dbnameStaging = propStaging.getProperty("db.name");
 
-    // Sử dụng propStaging cho DataWarehouse environment
+    // Sử dụng propData cho DataWarehouse environment
     public static String hostData = propDataWarehouse.getProperty("db.host");
     public static String portData = propDataWarehouse.getProperty("db.port");
     public static String usernameData = propDataWarehouse.getProperty("db.username");

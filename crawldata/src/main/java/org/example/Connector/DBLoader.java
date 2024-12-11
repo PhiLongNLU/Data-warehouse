@@ -21,12 +21,12 @@ public class DBLoader {
         try {
             Properties properties = new Properties();
             properties.load(getClass().getClassLoader().getResourceAsStream("config.properties"));
-            port = properties.getProperty("port");
-            database = properties.getProperty("db_name");
-            host = properties.getProperty("host_name");
+            port = properties.getProperty("db.port");
+            database = properties.getProperty("db.name");
+            host = properties.getProperty("db.host");
             configID = properties.getProperty("config_id");
-            username = properties.getProperty("username");
-            password = properties.getProperty("password");
+            username = properties.getProperty("db.username");
+            password = properties.getProperty("db.password");
         } catch (Exception e) {
             System.out.println("Exception at line 26 in DBLoader : " + e.getMessage());
         }
