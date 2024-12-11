@@ -21,7 +21,7 @@ public class ETLTransform {
     }
 
     public static LocalDate parseDate(String date) {
-        return LocalDate.parse(date, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        return LocalDate.parse(date, DateTimeFormatter.ofPattern("MM-dd-yyyy"));
     }
 
     public static LocalTime parseTime(String time) {
@@ -134,7 +134,8 @@ public class ETLTransform {
                 .orElse(null); // Nếu không tìm thấy, trả về null
     }
 
-    public static void insertOrUpdateFactTrip(Handle handle, FactTrip factTrip) {
+    public static int insertOrUpdateFactTrip(Handle handle, FactTrip factTrip) {
+        int  count = 0;
         // Lấy FactTrip cũ từ database theo transitKey
         FactTrip existingFactTrip = getFactTripByTransitKey(handle, factTrip.getTransitKey());
         // Đặt ngày hết hạn mới là 30-12-9999
@@ -167,6 +168,7 @@ public class ETLTransform {
                         .execute();
 
                 System.out.println("Updated existing FactTrip and inserted new FactTrip with Transit_Key: " + factTrip.getTransitKey());
+                count+=2;
             } else {
                 // Nếu dữ liệu không thay đổi, không làm gì cả
 //                System.out.println("No changes detected for Transit_Key: " + factTrip.getTransitKey());
@@ -184,7 +186,9 @@ public class ETLTransform {
                     .execute();
 
             System.out.println("Inserted new FactTrip with Transit_Key: " + factTrip.getTransitKey());
+            count++;
         }
+        return count;
     }
 
 
