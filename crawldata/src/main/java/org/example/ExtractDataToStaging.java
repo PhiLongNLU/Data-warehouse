@@ -14,7 +14,7 @@ import java.util.List;
 
 public class ExtractDataToStaging {
     private static void saveToStaging() {
-        // Lấy đường dẫn từ cột source_file trong bảng configs
+        // 1.Lấy đường dẫn từ cột source_file trong bảng configs
         String path = getSourceFilePath();
         if (path == null || path.isEmpty()) {
             System.err.println("Không tìm thấy đường dẫn file từ bảng configs.");
@@ -24,11 +24,13 @@ public class ExtractDataToStaging {
 
         File file = new File(path);
 
-        // Cập nhật log: bắt đầu trích xuất dữ liệu
+        // 2.Cập nhật log: bắt đầu trích xuất dữ liệu
         updateLog("EXTRACTING", "Bắt đầu quá trình trích xuất dữ liệu.", 0, null);
 
+        // 3.Kiểm tra xem file có tồn tại hay không
         if (!file.exists()) {
             System.err.println("File không tồn tại: " + path);
+            // 4.Ghi log "không tìm thấy file"
             updateLog("EXTRACT_FAILED", "Không tìm thấy file: " + path, 0, null);
             return;
         }
@@ -36,17 +38,17 @@ public class ExtractDataToStaging {
         try (BufferedReader reader = new BufferedReader(new FileReader(file));
              CSVReader csvReader = new CSVReader(reader)) {
 
-            // Đọc tất cả các dòng từ file CSV
+            // 5.Đọc tất cả các dòng từ file CSV
             List<String[]> allLines = csvReader.readAll();
 
-            // Kiểm tra nếu file rỗng hoặc không đủ dữ liệu
+            // 6.Kiểm tra nếu file rỗng hoặc không đủ dữ liệu
             if (allLines.isEmpty()) {
                 System.err.println("File CSV trống.");
+                // 7.Ghi log "file trống"
                 updateLog("EXTRACT_FAILED", "File CSV trống.", 0, null);
                 return;
             }
 
-            // Loại bỏ dòng đầu tiên (thường là header)
             allLines.remove(0);
 
             // Bắt đầu một phiên giao dịch để xóa dữ liệu cũ trước khi chèn dữ liệu mới
@@ -58,11 +60,11 @@ public class ExtractDataToStaging {
 
             try (Handle handle = JDBIConnector.getStagingJdbi().open()) {
                 handle.useTransaction(h -> {
-                    // Xóa toàn bộ dữ liệu trong bảng staging
+                    // 8.Xóa toàn bộ dữ liệu trong bảng staging
                     h.createUpdate(truncateSql).execute();
                     System.out.println("Dữ liệu cũ đã bị xóa khỏi bảng staging.");
 
-                    // Thực hiện batch insert dữ liệu mới từ CSV
+                    // 9.Thực hiện batch insert dữ liệu mới từ CSV
                     for (String[] line : allLines) {
                         if (line.length != 15) {
                             System.err.println("Dòng không hợp lệ: " + String.join(",", line));
@@ -90,7 +92,7 @@ public class ExtractDataToStaging {
                 });
             }
 
-            // Cập nhật log: quá trình trích xuất thành công
+            // 10.Cập nhật log: quá trình trích xuất thành công
             updateLog("EXTRACT_SUCCESS", "Dữ liệu đã được lưu thành công vào bảng staging.", allLines.size(), null);
         } catch (FileNotFoundException e) {
             System.err.println("Không tìm thấy file: " + e.getMessage());
