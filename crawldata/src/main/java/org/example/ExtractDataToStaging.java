@@ -9,6 +9,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -132,8 +133,8 @@ public class ExtractDataToStaging {
                   .bind(0, 1)
                   .bind(1, count)
                   .bind(2, status)
-                  .bind(3, LocalDateTime.now())
-                  .bind(4, LocalDateTime.now())
+                  .bind(3, LocalDate.now())
+                  .bind(4, LocalDate.now())
                   .bind(5, errorMessage)
                   .bind(6, "NGÂN")
                   .execute();

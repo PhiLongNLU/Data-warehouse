@@ -1,185 +1,131 @@
 package org.example;
 
 import org.example.Connector.JDBIConnector;
+import org.example.model.FactTrip;
 import org.jdbi.v3.core.Handle;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+
+import static org.example.service.ETLTransform.*;
+
 public class ETLProcess {
+    private static void processETL() {
 
-    private static void saveToDimAndFact() {
-        String selectStagingSQL = "SELECT * FROM staging";
+        // 1. Kiểm tra trạng thái log trong ngày hiện tại
+        LocalDate currentDate = LocalDate.now();
+        Date sqlDate = Date.valueOf(currentDate);
+        String controlLogSQL = "SELECT status FROM control_db.logs WHERE date_get_data = :date AND status = 'EXTRACT_SUCCESS'";
+        //2. Kết nối đến ControlDb và lấy ra status
         try (Handle handle = JDBIConnector.getStagingJdbi().open()) {
-            List<String[]> stagingData = handle.createQuery(selectStagingSQL).map((rs, ctx) -> new String[]{
-                    rs.getString("transit_time"),
-                    rs.getString("start_city"),
-                    rs.getString("end_city"),
-                    rs.getString("start_point"),
-                    rs.getString("end_point"),
-                    rs.getString("departure_date"),
-                    rs.getString("departure_time"),
-                    rs.getString("arrival_time"),
-                    rs.getString("arrival_date"),
-                    rs.getString("ticket_price"),
-                    rs.getString("bus_type"),
-                    rs.getString("total_available_seat"),
-                    rs.getString("date_get_data"),
-                    rs.getString("time_get_data"),
-                    rs.getString("location_get_data")
-            }).list();
+            // Truy vấn và lấy kết quả đầu tiên, nếu không có thì trả về chuỗi rỗng
+            String status = handle.createQuery(controlLogSQL)
+                    .bind("date", sqlDate)  // Gắn giá trị của ngày vào câu lệnh SQL
+                    .mapTo(String.class)
+                    .findFirst()
+                    .orElse("");
+            //3. Kiểm tra trạng thái nếu là EXTRACT_SUCCESS thì bắt đầu ETL
+            if ("EXTRACT_SUCCESS".equals(status)) {
+                // Nếu trạng thái là EXTRACT_SUCCESS, bắt đầu ETL
+                //4. Ghi vào log status = TRANSFORMING
+                updateLog("TRANSFORMING",  0, null);
+                //5 Bắt đầu trích xuất dữ liệu
+                //5.1 Kết nối đến stagingDB và lấy dữ liệu
+                String selectStagingSQL = "SELECT * FROM stagingdb.staging";
+                List<String[]> stagingData = handle.createQuery(selectStagingSQL).map((rs, ctx) -> new String[]{
+                        rs.getString("transit_time"),
+                        rs.getString("start_city"),
+                        rs.getString("end_city"),
+                        rs.getString("start_point"),
+                        rs.getString("end_point"),
+                        rs.getString("departure_date"),
+                        rs.getString("departure_time"),
+                        rs.getString("arrival_time"),
+                        rs.getString("arrival_date"),
+                        rs.getString("ticket_price"),
+                        rs.getString("bus_type"),
+                        rs.getString("total_available_seat"),
+                        rs.getString("date_get_data"),
+                        rs.getString("time_get_data"),
+                        rs.getString("location_get_data")
+                }).list();
+                int count =0;
+                //7. transform dữ liệu về đúng kiểu của fact,dim
+                for (String[] row : stagingData) {
+                    // Transform dữ liệu
+                    String transitTime = convertToTimeFormat(row[0]);
+                    String startCity = row[1];
+                    String endCity = row[2];
+                    String startPoint = row[3];
+                    String endPoint = row[4];
+                    LocalDate departureDate = parseDate(row[5]);
+                    LocalTime departureTime = parseTime(row[6]);
+                    LocalTime arrivalTime = parseTime(row[7]);
+                    LocalDate arrivalDate = parseDate(row[8]);
+                    double ticketPrice = parsePrice(row[9]);
+                    String busType = row[10];
+                    int totalAvailableSeat = parseSeat(row[11]);
+                    LocalDate dateGetData = parseDate(row[12]);
+                    LocalTime timeGetData = parseTime(row[13]);
 
-            for (String[] row : stagingData) {
-                // Transform dữ liệu
-                String transitTime = convertToTimeFormat(row[0]);
-                String startCity = row[1];
-                String endCity = row[2];
-                String startPoint = row[3];
-                String endPoint = row[4];
-                LocalDate departureDate = parseDate(row[5]);
-                LocalTime departureTime = parseTime(row[6]);
-                LocalTime arrivalTime = parseTime(row[7]);
-                LocalDate arrivalDate = parseDate(row[8]);
-                double ticketPrice = parsePrice(row[9]);
-                String busType = row[10];
-                int totalAvailableSeat = parseSeat(row[11]);
-                LocalDate dateGetData = parseDate(row[12]);
-                LocalTime timeGetData = parseTime(row[13]);
+                    //8. Thêm vào bảng Dim hoặc lấy các Dim_id (nếu đã có)
+                    int startCityKey = getOrInsertCity(handle, startCity);
+                    int endCityKey = getOrInsertCity(handle, endCity);
+                    int startPointKey = getOrInsertPoint(handle, startPoint);
+                    int endPointKey = getOrInsertPoint(handle, endPoint);
+                    int departureDateKey = getOrInsertDate(handle, departureDate);
+                    int arrivalDateKey = getOrInsertDate(handle, arrivalDate);
+                    int departureTimeKey = getOrInsertTime(handle, departureTime);
+                    int arrivalTimeKey = getOrInsertTime(handle, arrivalTime);
+                    int busKey = getOrInsertBus(handle, busType);
+                    int transitKey = getOrInsertTransit(handle, startCityKey, endCityKey, startPointKey, endPointKey, transitTime,departureDateKey,arrivalDateKey,departureTimeKey,arrivalTimeKey,busKey);
 
-                // Insert vào Dim và lấy khóa
-                int startCityKey = getOrInsertCity(handle, startCity);
-                int endCityKey = getOrInsertCity(handle, endCity);
-                int startPointKey = getOrInsertPoint(handle, startPoint);
-                int endPointKey = getOrInsertPoint(handle, endPoint);
-                int transitKey = getOrInsertTransit(handle, startCityKey, endCityKey, startPointKey, endPointKey, transitTime);
-                int departureDateKey = getOrInsertDate(handle, departureDate);
-                int arrivalDateKey = getOrInsertDate(handle, arrivalDate);
-                int departureTimeKey = getOrInsertTime(handle, departureTime);
-                int arrivalTimeKey = getOrInsertTime(handle, arrivalTime);
-                int busKey = getOrInsertBus(handle, busType);
-
-                // Insert vào Fact
-                insertFactTrip(handle, transitKey, departureDateKey, departureTimeKey, arrivalDateKey, arrivalTimeKey,
-                        dateGetData, dateGetData.plusMonths(1), busKey, ticketPrice, totalAvailableSeat);
+                    //9. Thêm dòng vào bảng fact từ các dim và dữ liệu của staging
+                    // tạo đối tượng FactTrip
+                    FactTrip factTrip = new FactTrip();
+                    factTrip.setTransitKey(transitKey);
+                    factTrip.setTicketPrice(ticketPrice);
+                    factTrip.setTotalAvailableSeat(totalAvailableSeat);
+                    // Thêm hoặc cập nhật FactTrip, trả về so dong anh huong
+                    count = count + insertOrUpdateFactTrip(handle,factTrip);
+                }
+                System.out.println("ETL Process completed successfully.");
+               // 10. Ghi vào log status TRANSFORMED
+                updateLog("TRANSFORM_SUCCESS", count, null);
+            } else {
+                //3.1 Trích xuất dữ liệu thất bại hoặc đang trích xuất
+                System.out.println("No EXTRACT_SUCCESS status found, ETL not started.");
+                updateLog("TRANSFORM_FAILED", 0, "No EXTRACT_SUCCESS status found, ETL not started.");
             }
-            System.out.println("ETL Process completed successfully.");
+        }catch (Exception e) {
+            // bất kì lỗi nào xảy ra trong quá trình ETL đều được ghi vào log với status TRANSFORM_FAILED
+            System.err.println("ETL Process failed: " + e.getMessage());
+            updateLog("TRANSFORM_FAILED", 0, e.getMessage());
         }
     }
+    private static void updateLog(String status, int count, String errorMessage) {
+        String insertLogSql = "INSERT INTO control_db.logs (configs_id, count, status, date_update, date_get_data, error_message, create_by) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-    private static String convertToTimeFormat(String timeString) {
-        if (timeString.contains("giờ")) {
-            String hours = timeString.split(" ")[0];
-            return String.format("%02d:00:00", Integer.parseInt(hours));
+        try (Handle handle = JDBIConnector.getControlJdbi().open()) {
+            handle.createUpdate(insertLogSql)
+                    .bind(0, 1)
+                    .bind(1, count)
+                    .bind(2, status)
+                    .bind(3, LocalDate.now())
+                    .bind(4, LocalDate.now())
+                    .bind(5, errorMessage)
+                    .bind(6, "Hải")
+                    .execute();
+            System.out.println("Log đã được ghi: " + status);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi ghi log: " + e.getMessage());
         }
-        return "00:00:00";
     }
-
-    private static LocalDate parseDate(String date) {
-        return LocalDate.parse(date, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-    }
-
-    private static LocalTime parseTime(String time) {
-        return LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
-    }
-
-    private static double parsePrice(String price) {
-        return Double.parseDouble(price.replace(".", "").replace("đ", "").trim());
-    }
-
-    private static int parseSeat(String seat) {
-        return Integer.parseInt(seat.replace("chỗ trống", "").trim());
-    }
-
-    private static int getOrInsertCity(Handle handle, String cityName) {
-        String selectCitySQL = "SELECT City_Key FROM data_warehouse.Dim_city WHERE City_Name = ?";
-        String insertCitySQL = "INSERT INTO data_warehouse.Dim_city (City_Name) VALUES (?)";
-
-        return handle.createQuery(selectCitySQL).bind(0, cityName).mapTo(Integer.class).findFirst()
-                .orElseGet(() -> handle.createUpdate(insertCitySQL).bind(0, cityName).executeAndReturnGeneratedKeys("City_Key").mapTo(Integer.class).one());
-    }
-
-    private static int getOrInsertPoint(Handle handle, String pointName) {
-        String selectPointSQL = "SELECT Point_Key FROM data_warehouse.Dim_Point WHERE Point_Name = ?";
-        String insertPointSQL = "INSERT INTO data_warehouse.Dim_Point (Point_Name) VALUES (?)";
-
-        return handle.createQuery(selectPointSQL).bind(0, pointName).mapTo(Integer.class).findFirst()
-                .orElseGet(() -> handle.createUpdate(insertPointSQL).bind(0, pointName).executeAndReturnGeneratedKeys("Point_Key").mapTo(Integer.class).one());
-    }
-
-    private static int getOrInsertTransit(Handle handle, int startCityKey, int endCityKey, int startPointKey, int endPointKey, String transitTime) {
-        String selectTransitSQL = "SELECT Transit_Key FROM data_warehouse.Dim_Transit WHERE StartCity_Key = ? AND EndCity_Key = ? AND StartPoint_Key = ? AND EndPoint_Key = ? AND TransitTime = ?";
-        String insertTransitSQL = "INSERT INTO data_warehouse.Dim_Transit (StartCity_Key, EndCity_Key, StartPoint_Key, EndPoint_Key, TransitTime) VALUES (?, ?, ?, ?, ?)";
-
-        return handle.createQuery(selectTransitSQL)
-                .bind(0, startCityKey)
-                .bind(1, endCityKey)
-                .bind(2, startPointKey)
-                .bind(3, endPointKey)
-                .bind(4, transitTime)
-                .mapTo(Integer.class).findFirst()
-                .orElseGet(() -> handle.createUpdate(insertTransitSQL)
-                        .bind(0, startCityKey)
-                        .bind(1, endCityKey)
-                        .bind(2, startPointKey)
-                        .bind(3, endPointKey)
-                        .bind(4, transitTime)
-                        .executeAndReturnGeneratedKeys("Transit_Key")
-                        .mapTo(Integer.class).one());
-    }
-
-    private static int getOrInsertDate(Handle handle, LocalDate date) {
-        String selectDateSQL = "SELECT Date_Key FROM data_warehouse.Dim_Date WHERE Date = ?";
-        String insertDateSQL = "INSERT INTO data_warehouse.Dim_Date (Date, Year, Month, Day) VALUES (?, ?, ?, ?)";
-
-        return handle.createQuery(selectDateSQL).bind(0, date).mapTo(Integer.class).findFirst()
-                .orElseGet(() -> handle.createUpdate(insertDateSQL)
-                        .bind(0, date)
-                        .bind(1, date.getYear())
-                        .bind(2, date.getMonthValue())
-                        .bind(3, date.getDayOfMonth())
-                        .executeAndReturnGeneratedKeys("Date_Key").mapTo(Integer.class).one());
-    }
-
-    private static int getOrInsertTime(Handle handle, LocalTime time) {
-        String selectTimeSQL = "SELECT Time_Key FROM data_warehouse.Dim_TimeOfDay WHERE Time = ?";
-        String insertTimeSQL = "INSERT INTO data_warehouse.Dim_TimeOfDay (Time) VALUES (?)";
-
-        return handle.createQuery(selectTimeSQL).bind(0, time).mapTo(Integer.class).findFirst()
-                .orElseGet(() -> handle.createUpdate(insertTimeSQL).bind(0, time).executeAndReturnGeneratedKeys("Time_Key").mapTo(Integer.class).one());
-    }
-
-    private static int getOrInsertBus(Handle handle, String busType) {
-        String selectBusSQL = "SELECT Bus_Key FROM data_warehouse.Dim_Bus WHERE BusType = ?";
-        String insertBusSQL = "INSERT INTO data_warehouse.Dim_Bus (BusType) VALUES (?)";
-
-        return handle.createQuery(selectBusSQL).bind(0, busType).mapTo(Integer.class).findFirst()
-                .orElseGet(() -> handle.createUpdate(insertBusSQL).bind(0, busType).executeAndReturnGeneratedKeys("Bus_Key").mapTo(Integer.class).one());
-    }
-
-    private static void insertFactTrip(Handle handle, int transitKey, int departureDateKey, int departureTimeKey,
-                                       int arrivalDateKey, int arrivalTimeKey, LocalDate dateGetData, LocalDate dateExpiredData,
-                                       int busKey, double ticketPrice, int totalAvailableSeat) {
-        String insertFactSQL = "INSERT INTO data_warehouse.Fact_Trip (Transit_Key, DepartureDate_Key, DepartureTime_Key, ArrivalDate_Key, " +
-                "ArrivalTime_Key, DateGetData, DateExpiredData, Bus_Key, TicketPrice, TotalAvailableSeat) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        handle.createUpdate(insertFactSQL)
-                .bind(0, transitKey)
-                .bind(1, departureDateKey)
-                .bind(2, departureTimeKey)
-                .bind(3, arrivalDateKey)
-                .bind(4, arrivalTimeKey)
-                .bind(5, dateGetData)
-                .bind(6, dateExpiredData)
-                .bind(7, busKey)
-                .bind(8, ticketPrice)
-                .bind(9, totalAvailableSeat)
-                .execute();
-    }
-
     public static void main(String[] args) {
-        saveToDimAndFact();
+        processETL();
     }
 }
